@@ -24,14 +24,11 @@ var chat = angular.module("cosmic_chat",["firebase"])
 	$scope.message_text = "";
 
 	var messages = new Firebase("https://democosmicchat.firebaseio.com/messages");
-	var users = new Firebase("https://democosmicchat.firebaseio.com/users");
-	
 	$scope.messages = $firebaseArray(messages);
-	$scope.users = $firebaseArray(users);
 
 	messages.on("child_added", function(){
 		scrollTo(0,document.getElementsByTagName("body")[0].scrollHeight + 100);
-	});
+	})
 
 	$scope.sendMessage = function(){
 		date = new Date();
