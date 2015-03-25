@@ -8,42 +8,86 @@ function createId(a){
 var chat = angular.module("cosmic_chat",["firebase"])
 .controller("mainController",function($scope, $firebaseArray){
 
+	$scope.newUser = {
+		name: '',
+		password: '',
+		password2: '',
+		passwordFail: false,
+	};
+	// Firebase messages
+
+	var chat = new Firebase("https://<Your firebase>.firebaseio.com/chat");
+	$scope.chat = $firebaseArray(chat);
+	
+	var messages = chat.child("messages");
+	$scope.messages = $firebaseArray(messages);
+
+	var users = chat.child("users");
+
+	// Login 
 	$scope.login = function(){
-		$scope.my_name = $scope.username;
-		$scope.loged = true;
+		users.on("value", function(a){
+			a.forEach(function(data){
+				var b = a.val()[data.key()]
+				if(b.name == $scope.username && b.password == $scope.password){
+					$scope.my_id = b.id;
+					$scope.my_name = b.name;
+					$scope.loged = true;
+					scrollTo(0,document.getElementsByTagName("body")[0].scrollHeight);
+				}
+			});
+		});
+
+		$scope.password = "";
 	}
-	if(localStorage.demoCosmicChat != undefined && localStorage.demoCosmicChat.user_id != undefined){
-		$scope.my_name = localStorage.demoCosmicChat.username;
-		$scope.my_id = localStorage.demoCosmicChat.user_id;
-		$scope.loged = true;
-	}else{
-		$scope.loged = false;
-		$scope.my_id = createId(5);
+
+	// Sing up window
+	$scope.singup_window = function(){
+		$('.singup_window')
+		.modal({
+			onApprove: function(){
+				if($scope.newUser.name.trim() != '' && $scope.newUser.password.trim() != '' && $scope.newUser.password.trim().length >= 6){
+					if($scope.newUser.password == $scope.newUser.password2){
+						users.push({
+							id: createId('10'),
+							name: $scope.newUser.name,
+							password: $scope.newUser.password,
+						})
+						$scope.newUser.passwordFail = false;
+					}else{
+						$scope.newUser.password = $scope.newUser.password2 = '';
+						$scope.newUser.passwordFail = true;
+					}
+				}
+			}
+		})
+		.modal('show');
+	}
+
+	// Send a Message
+	$scope.sendMessage = function(){
+		date = new Date();
+		if($scope.message_text.trim().length > 0){
+			$scope.messages.$add({
+				author_id: $scope.my_id,
+				author: $scope.my_name,
+				date: date.getYear() + '/' + date.getMonth() + '/' + date.getDay(),
+				content: $scope.message_text.trim(),
+			});
+			$scope.message_text = "";
+		}
 	}
 
 	$scope.message_text = "";
 
-	var messages = new Firebase("https://democosmicchat.firebaseio.com/messages");
-	$scope.messages = $firebaseArray(messages);
 
 	messages.on("child_added", function(){
-		scrollTo(0,document.getElementsByTagName("body")[0].scrollHeight + 100);
+		scrollTo(0,document.getElementsByTagName("body")[0].scrollHeight);
 	})
 
-	$scope.sendMessage = function(){
-		date = new Date();
-		$scope.messages.$add({
-			author_id: $scope.my_id,
-			author: $scope.my_name,
-			date: date.getYear() + '/' + date.getMonth() + '/' + date.getDay(),
-			content: $scope.message_text,
-		});
-		$scope.message_text = "";
-	}
+	
 	document.addEventListener("keydown",function(e){
 		if(e.keyCode == 13 && document.getElementById("textEnter").value.trim() != "")
 			$scope.sendMessage();
 	});
 });
-
-scrollTo(0,document.getElementsByTagName("body")[0].scrollHeight)
